@@ -38,7 +38,7 @@ Installation
 Configuration
 -------------
 
-The script uses the following JSON configuration files:
+The script uses the following JSON files for configuration:
 
 *   `allowed_extensions.json`: Specifies the file extensions to include.
 *   `skip_folders.json`: Lists the folders to skip.
