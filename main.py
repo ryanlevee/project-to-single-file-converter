@@ -7,11 +7,29 @@ from typing import Dict, Generator, List
 logging.basicConfig(level=logging.INFO)
 
 
+BlockCommentType = Dict[str, Dict[str, str]]
+InlineCommentType = Dict[str, str]
+FiltersType = List[str]
+ConfigDataType = BlockCommentType | InlineCommentType | FiltersType | str
+ProjectConfigType = Dict[str, str] | str
+LanguageSyntaxType = Dict[str, Dict[str, str] | str]
+
+
 @dataclass
-class Config:
-    skip_folders: List[str] = field(default_factory=list)
-    skip_files: List[str] = field(default_factory=list)
-    allowed_extensions: List[str] = field(default_factory=list)
+class LanguageSyntax:
+    block_comment: BlockCommentType = field(default_factory=dict)
+    inline_comment: InlineCommentType = field(default_factory=dict)
+
+
+@dataclass
+class WalkingFilters:
+    skip_folders: FiltersType = field(default_factory=list)
+    skip_files: FiltersType = field(default_factory=list)
+    allowed_extensions: FiltersType = field(default_factory=list)
+
+
+@dataclass
+class Config(LanguageSyntax, WalkingFilters):
     root_path: str = field(default_factory=str)
     project_dir: str = field(default_factory=str)
     output_dir: str = field(default_factory=str)
@@ -40,10 +58,11 @@ class FileMerger:
         self.output_dir: str = config.output_dir
         self.output_filename: str = config.output_filename
         self.output_extension: str = config.output_extension
-        self.project_language: str = config.project_language
         self.skip_folders: List[str] = config.skip_folders
         self.skip_files: List[str] = config.skip_files
         self.allowed_extensions: List[str] = config.allowed_extensions
+        self.block_comment: Dict[str, Dict[str, str]] = config.block_comment
+        self.inline_comment: Dict[str, str] = config.inline_comment
 
     def start(self) -> None:
         """
@@ -107,14 +126,23 @@ class FileMerger:
         if self.go_to_next_file(file):
             return
 
-        header = f"```\n/*\nfile: {new_file}\n*/\n"
+        header = (
+            f"```\n{self.block_comment['open']}\nfile: "
+            + f"{new_file}\n{self.block_comment['close']}\n"
+        )
         yield header
-        lines = self.read_file(new_file)
+
+        lines: Generator[str, None, None] = self.read_file(new_file)
+
+        inline_comment: Dict[str, str] | str = self.inline_comment
+
+        if not isinstance(inline_comment, str):
+            raise TypeError('Expected "inline_comment" to be a string')
+
         yield from [
-            l
-            for l in lines
-            if not l.lstrip().startswith(self.get_comment_syntax())
+            l for l in lines if not l.lstrip().startswith(inline_comment)
         ]
+
         yield "\n```\n\n"
 
     def go_to_next_file(self, file: str) -> bool:
@@ -150,24 +178,6 @@ class FileMerger:
         except IOError as e:
             logging.error(f"Error reading file {new_file}: {e}")
 
-    def get_comment_syntax(self) -> str:
-        """
-        Returns the comment syntax for the project language.
-
-        Returns:
-            str: The comment syntax.
-        """
-        match self.project_language.lower():
-            case "python" | "py":
-                return "#"
-            case "javascript" | "js":
-                return "//"
-            case _:
-                logging.warning(
-                    f"Unknown project language: {self.project_language}"
-                )
-                return "#"
-
 
 def load_json(file_path: str) -> Dict:
     """
@@ -187,7 +197,34 @@ def load_json(file_path: str) -> Dict:
         return {}
 
 
-ConfigDataType = List[str] | Dict[str, str] | str
+def get_language_syntax(project_language: str) -> LanguageSyntaxType:
+    """
+    Returns the comment syntax for both block and inline comments, depending
+    on the project language.
+
+    Returns:
+        str: The comment syntax.
+    """
+    match project_language.lower():
+        case "python" | "py":
+            return {
+                "block_comment": {"open": '"""', "close": '"""'},
+                "inline_comment": "#",
+            }
+        case "javascript" | "js":
+            return {
+                "block_comment": {"open": "/*", "close": "*/"},
+                "inline_comment": "//",
+            }
+        case _:
+            logging.warning(
+                f"Unknown project language: '{project_language}'. "
+                "Final syntax may not be accurate."
+            )
+            return {
+                "block_comment": {"open": "/*", "close": "*/"},
+                "inline_comment": "//",
+            }
 
 
 def unpack_dict_to_dataclass(data: Dict[str, ConfigDataType]) -> Config:
@@ -195,7 +232,8 @@ def unpack_dict_to_dataclass(data: Dict[str, ConfigDataType]) -> Config:
     Converts a dictionary to a Config data class instance.
 
     Args:
-        data (Dict[str, ConfigDataType]): The dictionary containing configuration data.
+        data (Dict[str, ConfigDataType]): The dictionary containing
+        configuration data.
 
     Returns:
         Config: An instance of the Config data class.
@@ -217,16 +255,24 @@ def run() -> None:
     }
 
     config_data: Dict[str, ConfigDataType] = {
-        key: load_json(os.path.join('config', path)) for key, path in config_files.items()
+        key: load_json(os.path.join("config", path))
+        for key, path in config_files.items()
     }
 
-    project_data: ConfigDataType = config_data.pop("project_config")
+    project_config: ConfigDataType = config_data.pop("project_config")
 
-    if not isinstance(project_data, dict):
-        raise TypeError("Expected 'project_config' to be a dictionary")
+    if not isinstance(project_config, dict):
+        raise TypeError('Expected "project_config" to be a dictionary')
 
-    config_data.update(project_data)
+    project_language: ProjectConfigType = project_config["project_language"]
+
+    if not isinstance(project_language, str):
+        raise TypeError('Expected "project_language" to be a string')
+
+    language_syntax: LanguageSyntaxType = get_language_syntax(project_language)
+    config_data.update(project_config, **language_syntax)
     typed_config: Config = unpack_dict_to_dataclass(config_data)
+
     file_merger = FileMerger(typed_config)
     file_merger.start()
 
