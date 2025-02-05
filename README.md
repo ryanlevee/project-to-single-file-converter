@@ -6,6 +6,7 @@ This is a simple, lightweight Python script designed to merge files from a direc
 Key Features
 --------
 
+*   **Programming Languages**: Designed to work with any programming language.
 *   **Configuration**: Uses JSON files to load configuration settings.
 *   **File Processing**: Walks through directories, reads allowed files, and writes their content to an output file.
 *   **Skipping Logic**: Skips specified folders and files based on the configuration.
