@@ -82,23 +82,29 @@ The script imports necessary modules and sets up logging:
     
     logging.basicConfig(level=logging.INFO)
     
+### Data Classes
 
-### Config Data Class
-
-A `Config` data class is defined to hold configuration settings:
+A `Config` data class is defined to hold configuration settings. The `LanguageSyntax` and `WalkingFilters` data classes are used to manage comment syntax and file filtering settings, respectively. The `Config` class inherits from both to consolidate all configuration settings.
 
     @dataclass
-    class Config:
-        skip_folders: List[str] = field(default_factory=list)
-        skip_files: List[str] = field(default_factory=list)
-        allowed_extensions: List[str] = field(default_factory=list)
+    class LanguageSyntax:
+        block_comment: BlockCommentType = field(default_factory=dict)
+        inline_comment: InlineCommentType = field(default_factory=dict)
+    
+    @dataclass
+    class WalkingFilters:
+        skip_folders: FiltersType = field(default_factory=list)
+        skip_files: FiltersType = field(default_factory=list)
+        allowed_extensions: FiltersType = field(default_factory=list)
+    
+    @dataclass
+    class Config(LanguageSyntax, WalkingFilters):
         root_path: str = field(default_factory=str)
         project_dir: str = field(default_factory=str)
         output_dir: str = field(default_factory=str)
         output_filename: str = field(default_factory=str)
         output_extension: str = field(default_factory=str)
         project_language: str = field(default_factory=str)
-    
 
 ### FileMerger Class
 
