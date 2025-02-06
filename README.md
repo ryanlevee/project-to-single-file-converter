@@ -80,6 +80,91 @@ This function enhances the script's robustness and flexibility, making it easier
 
 * * *
 
+### Script Overview
+
+#### Imports and Configuration
+
+The script imports necessary modules and sets up logging:
+
+    import json
+    import logging
+    import os
+    from dataclasses import dataclass, field, fields
+    from typing import Dict, Generator, List
+    
+    logging.basicConfig(level=logging.INFO)
+    
+#### Data Classes
+
+A `Config` data class is defined to hold configuration settings. The `LanguageSyntax` and `WalkingFilters` data classes are used to manage comment syntax and file filtering settings, respectively. The `Config` class inherits from both to consolidate all configuration settings.
+
+    @dataclass
+    class LanguageSyntax:
+        block_comment: BlockCommentType = field(default_factory=dict)
+        inline_comment: InlineCommentType = field(default_factory=dict)
+    
+    @dataclass
+    class WalkingFilters:
+        skip_folders: FiltersType = field(default_factory=list)
+        skip_files: FiltersType = field(default_factory=list)
+        allowed_extensions: FiltersType = field(default_factory=list)
+    
+    @dataclass
+    class Config(LanguageSyntax, WalkingFilters):
+        root_path: str = field(default_factory=str)
+        project_dir: str = field(default_factory=str)
+        output_dir: str = field(default_factory=str)
+        output_filename: str = field(default_factory=str)
+        output_extension: str = field(default_factory=str)
+        project_language: str = field(default_factory=str)
+
+#### FileMerger Class
+
+The `FileMerger` class handles the merging of files:
+
+*   **Initialization**: Sets up the configuration.
+*   **start()**: Begins the file processing.
+*   **walk\_directory()**: Walks through directories and yields lines from allowed files.
+*   **handle\_file()**: Handles individual files or directories.
+*   **should\_skip\_file()**: Determines whether to skip a file based on its extension and name.
+*   **process\_file()**: Processes a file, yielding lines while handling comments.
+*   **read\_file()**: Reads the content of a file.
+*   **write\_output\_file()**: Writes the collected lines to the output file.
+
+#### Helper Functions
+
+*   **load\_json()**: Loads a JSON file and returns its content.
+*   **get\_language\_syntax()**: Returns the comment syntax for the specified project language.
+*   **unpack\_dict\_to\_dataclass()**: Converts a dictionary to a `Config` data class instance.
+
+#### Main Function
+
+The `run()` function loads configuration data from JSON files and starts the file processing:
+
+    def run() -> None:
+        config_files: Dict[str, str] = {
+            "skip_folders": "skip_folders.json",
+            "skip_files": "skip_files.json",
+            "allowed_extensions": "allowed_extensions.json",
+            "project_config": "project_config.json",
+        }
+        config_data: Dict[str, ConfigDataType] = {
+            key: load_json(path) for key, path in config_files.items()
+        }
+        project_data: ConfigDataType = config_data.pop("project_config")
+        if not isinstance(project_data, dict):
+            raise TypeError("Expected 'project_config' to be a dictionary")
+        config_data.update(project_data)
+        typed_config: Config = unpack_to_dataclass(config_data)
+        file_merger = FileMerger(typed_config)
+        file_merger.start()
+    
+    if __name__ == "__main__":
+        run()
+    
+
+* * *
+
 ### Installation
 
 1.  Clone the repository:
@@ -123,92 +208,6 @@ Example of `project_config.json`:
 2.  Run the script:
     
         python main.py
-        
-    
-
-* * *
-
-### Script Overview
-
-#### Imports and Configuration
-
-The script imports necessary modules and sets up logging:
-
-    import json
-    import logging
-    import os
-    from dataclasses import dataclass, field, fields
-    from typing import Dict, Generator, List
-    
-    logging.basicConfig(level=logging.INFO)
-    
-### Data Classes
-
-A `Config` data class is defined to hold configuration settings. The `LanguageSyntax` and `WalkingFilters` data classes are used to manage comment syntax and file filtering settings, respectively. The `Config` class inherits from both to consolidate all configuration settings.
-
-    @dataclass
-    class LanguageSyntax:
-        block_comment: BlockCommentType = field(default_factory=dict)
-        inline_comment: InlineCommentType = field(default_factory=dict)
-    
-    @dataclass
-    class WalkingFilters:
-        skip_folders: FiltersType = field(default_factory=list)
-        skip_files: FiltersType = field(default_factory=list)
-        allowed_extensions: FiltersType = field(default_factory=list)
-    
-    @dataclass
-    class Config(LanguageSyntax, WalkingFilters):
-        root_path: str = field(default_factory=str)
-        project_dir: str = field(default_factory=str)
-        output_dir: str = field(default_factory=str)
-        output_filename: str = field(default_factory=str)
-        output_extension: str = field(default_factory=str)
-        project_language: str = field(default_factory=str)
-
-### FileMerger Class
-
-The `FileMerger` class handles the merging of files:
-
-*   **Initialization**: Sets up the configuration.
-*   **start()**: Begins the file processing.
-*   **walk\_directory()**: Walks through directories and yields lines from allowed files.
-*   **handle\_file()**: Handles individual files or directories.
-*   **should\_skip\_file()**: Determines whether to skip a file based on its extension and name.
-*   **process\_file()**: Processes a file, yielding lines while handling comments.
-*   **read\_file()**: Reads the content of a file.
-*   **write\_output\_file()**: Writes the collected lines to the output file.
-
-#### Helper Functions
-
-*   **load\_json()**: Loads a JSON file and returns its content.
-*   **get\_language\_syntax()**: Returns the comment syntax for the specified project language.
-*   **unpack\_dict\_to\_dataclass()**: Converts a dictionary to a `Config` data class instance.
-
-#### Main Function
-
-The `run()` function loads configuration data from JSON files and starts the file processing:
-
-    def run() -> None:
-        config_files: Dict[str, str] = {
-            "skip_folders": "skip_folders.json",
-            "skip_files": "skip_files.json",
-            "allowed_extensions": "allowed_extensions.json",
-            "project_config": "project_config.json",
-        }
-        config_data: Dict[str, ConfigDataType] = {
-            key: load_json(path) for key, path in config_files.items()
-        }
-        project_data: ConfigDataType = config_data.pop("project_config")
-        if not isinstance(project_data, dict):
-            raise TypeError("Expected 'project_config' to be a dictionary")
-        config_data.update(project_data)
-        typed_config: Config = unpack_to_dataclass(config_data)
-        file_merger = FileMerger(typed_config)
-        file_merger.start()
-    
-    if __name__ == "__main__":
-        run()
     
 
 * * *
