@@ -141,22 +141,14 @@ The script imports necessary modules and sets up logging:
     
     logging.basicConfig(level=logging.INFO)
     
+### Data Classes
 
-#### Config Data Class
+A `Config` data class is defined to hold configuration settings. The `LanguageSyntax` and `WalkingFilters` data classes are used to manage comment syntax and file filtering settings, respectively. The `Config` class inherits from both to consolidate all configuration settings.
 
-A `Config` data class is defined to hold configuration settings. The `LanguageSyntax`, `WalkingFilters`, and `ProjectConfig` data classes are used to manage comment syntax and file filtering settings, respectively. The `Config` class inherits from these to consolidate all configuration settings.
-
-    BlockCommentType = Dict[str, str]
-    InlineCommentType = str
-    FiltersType = List[str]
-    ConfigDataType = BlockCommentType | InlineCommentType | FiltersType | str
-    ProjectConfigType = Dict[str, str] | str
-    LanguageSyntaxType = Dict[str, Dict[str, str] | str]
-    
     @dataclass
     class LanguageSyntax:
         block_comment: BlockCommentType = field(default_factory=dict)
-        inline_comment: InlineCommentType = field(default_factory=str)
+        inline_comment: InlineCommentType = field(default_factory=dict)
     
     @dataclass
     class WalkingFilters:
@@ -165,16 +157,15 @@ A `Config` data class is defined to hold configuration settings. The `LanguageSy
         allowed_extensions: FiltersType = field(default_factory=list)
     
     @dataclass
-    class ProjectConfig:
+    class Config(LanguageSyntax, WalkingFilters):
         root_path: str = field(default_factory=str)
         project_dir: str = field(default_factory=str)
         output_dir: str = field(default_factory=str)
         output_filename: str = field(default_factory=str)
         output_extension: str = field(default_factory=str)
         project_language: str = field(default_factory=str)
-    
 
-#### FileMerger Class
+### FileMerger Class
 
 The `FileMerger` class handles the merging of files:
 
