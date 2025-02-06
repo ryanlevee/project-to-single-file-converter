@@ -1,4 +1,5 @@
-### Project to Single File Converter
+Project to Single File Converter
+======================
 
 This is a simple, lightweight Python script designed to merge files from a directory and subdirectories into a single output file, while skipping specified folders and files. This can be useful for creating a consolidated text version of a project for documentation or review purposes.
 
@@ -8,7 +9,7 @@ This is a simple, lightweight Python script designed to merge files from a direc
 
 1.  Key Features
 2.  Key Technical Highlights
-3.  Dynamic Type Checking with `unpack_dict_to_dataclass`
+3.  Dynamic Type Checking with `unpack_to_dataclass`
 4.  Installation
 5.  Configuration
 6.  Usage
@@ -47,9 +48,9 @@ This is a simple, lightweight Python script designed to merge files from a direc
 
 * * *
 
-### Dynamic Type Checking with `unpack_dict_to_dataclass`
+### Dynamic Type Checking with `unpack_to_dataclass`
 
-The `unpack_dict_to_dataclass` function is a key component of the script, designed to dynamically convert a dictionary into an instance of the `Config` data class. This function ensures that each key in the dictionary matches the corresponding field name in the `Config` data class and that the value is of the expected type. The expected type is determined using the `default_factory` of each field, providing a robust and flexible way to handle configuration data.
+The `unpack_to_dataclass` function is a key component of the script, designed to dynamically convert a dictionary into an instance of the `Config` data class. This function ensures that each key in the dictionary matches the corresponding field name in the `Config` data class and that the value is of the expected type. The expected type is determined using the `default_factory` of each field, providing a robust and flexible way to handle configuration data.
 
 **Key Features:**
 
@@ -59,7 +60,7 @@ The `unpack_dict_to_dataclass` function is a key component of the script, design
 
 **Function Signature:**
 
-    def unpack_dict_to_dataclass(data: Dict[str, ConfigDataType]) -> Config:
+    def unpack_to_dataclass(data: Dict[str, ConfigDataType]) -> Config:
         """
         Converts a dictionary to a Config data class instance.
     
@@ -202,7 +203,7 @@ The `run()` function loads configuration data from JSON files and starts the fil
         if not isinstance(project_data, dict):
             raise TypeError("Expected 'project_config' to be a dictionary")
         config_data.update(project_data)
-        typed_config: Config = unpack_dict_to_dataclass(config_data)
+        typed_config: Config = unpack_to_dataclass(config_data)
         file_merger = FileMerger(typed_config)
         file_merger.start()
     
