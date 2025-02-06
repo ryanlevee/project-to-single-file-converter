@@ -236,7 +236,7 @@ def get_language_syntax(project_language: str) -> LanguageSyntaxType:
             }
 
 
-def unpack_dict_to_dataclass(data: Dict[str, ConfigDataType]) -> Config:
+def unpack_to_dataclass(data: Dict[str, ConfigDataType]) -> Config:
     """
     Converts a dictionary to a Config data class instance.
 
@@ -307,7 +307,7 @@ def run() -> None:
 
     language_syntax: LanguageSyntaxType = get_language_syntax(project_language)
     config_data.update(**project_config, **language_syntax)
-    typed_config: Config = unpack_dict_to_dataclass(config_data)
+    typed_config: Config = unpack_to_dataclass(config_data)
     file_merger: FileMerger = FileMerger(typed_config)
     file_merger.start()
 
