@@ -1,4 +1,6 @@
 [
+    "__pycache__",
+    "__tests__",
     ".git",
     ".github",
     ".idea",
@@ -6,13 +8,10 @@
     ".pytest_cache",
     ".venv",
     ".vscode",
-    "__pycache__",
-    "archive",
     "archive",
     "backup",
     "build",
     "catalog",
-    "dist",
     "dist",
     "docs",
     "env",
@@ -22,10 +21,12 @@
     "media",
     "migrations",
     "node_modules",
+    "primary",
     "private",
+    "public",
     "temp",
     "test",
     "tmp",
-    "venv",
-    "txt_files"
+    "txt_files",
+    "venv"
 ]

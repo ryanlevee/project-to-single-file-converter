@@ -3,5 +3,10 @@
     "config_default.py",
     "manage.py",
     "package.json",
-    "package-lock.json"
+    "package-lock.json",
+
+    ".eslintrc.js",
+    "jest.config.js",
+    "babel.config.js",
+    "vite.config.js"
 ]

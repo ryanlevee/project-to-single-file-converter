@@ -62,9 +62,7 @@ class FileMerger:
         except IOError as e:
             logging.error(f"Error writing to file {output_path}: {e}")
 
-    def walk_directory(
-        self, path: str, dir: str
-    ) -> Generator[str, None, None]:
+    def walk_directory(self, path: str, dir: str) -> Generator[str, None, None]:
         """
         Walks through the directory and yields lines from allowed files.
 
@@ -107,13 +105,13 @@ class FileMerger:
         if self.go_to_next_file(file):
             return
 
-        header = f"```\n/*\nfile: {new_file}\n*/\n"
+        headRem = self.get_header_comment_syntax()
+
+        header = f"```\n{headRem["top"]}\nfile: {new_file}\n{headRem["btm"]}\n"
         yield header
         lines = self.read_file(new_file)
         yield from [
-            l
-            for l in lines
-            if not l.lstrip().startswith(self.get_comment_syntax())
+            l for l in lines if not l.lstrip().startswith(self.get_comment_syntax())
         ]
         yield "\n```\n\n"
 
@@ -130,6 +128,7 @@ class FileMerger:
         return (
             not any(file.endswith(ext) for ext in self.allowed_extensions)
             or file in self.skip_files
+            or any(skip in file for skip in self.skip_files)
         )
 
     def read_file(self, new_file: str) -> Generator[str, None, None]:
@@ -143,12 +142,30 @@ class FileMerger:
             List[str]: A list of lines from the file.
         """
         try:
-            with open(new_file, "r") as f:
-                for line in f:
-                    yield line
-
+            with open(new_file, "r", errors="ignore") as f:
+                try:
+                    for line in f:
+                        yield line
+                except Exception as e:
+                    logging.error(f"Error reading file {new_file}: {e}")
         except IOError as e:
             logging.error(f"Error reading file {new_file}: {e}")
+
+    def get_header_comment_syntax(self) -> str:
+        """
+        Returns the comment syntax for file header based on the project language.
+
+        Returns:
+            str: The comment syntax.
+        """
+        match self.project_language.lower():
+            case "python" | "py":
+                return {"top": "###", "btm": "###"}
+            case "javascript" | "js":
+                return {"top": "/*", "btm": "*/"}
+            case _:
+                logging.warning(f"Unknown project language: {self.project_language}")
+                return "/*"
 
     def get_comment_syntax(self) -> str:
         """
@@ -163,9 +180,7 @@ class FileMerger:
             case "javascript" | "js":
                 return "//"
             case _:
-                logging.warning(
-                    f"Unknown project language: {self.project_language}"
-                )
+                logging.warning(f"Unknown project language: {self.project_language}")
                 return "#"
 
 
@@ -217,7 +232,8 @@ def run() -> None:
     }
 
     config_data: Dict[str, ConfigDataType] = {
-        key: load_json(os.path.join('config', path)) for key, path in config_files.items()
+        key: load_json(os.path.join("config", path))
+        for key, path in config_files.items()
     }
 
     project_data: ConfigDataType = config_data.pop("project_config")
