@@ -24,6 +24,7 @@
     "primary",
     "private",
     "public",
+    "static",
     "temp",
     "test",
     "tmp",

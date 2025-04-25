@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
     "root_path": "C:\\Users\\username\\Documents",
+=======
+    "root_path": "C:\\Users\\[your-username]\\Documents",
+>>>>>>> a4ee458d7905dda69f4b554cc450419129eed6cf
     "project_dir": "project-to-single-file-converter",
     "output_dir": "output",
     "output_filename": "single-file-project",
